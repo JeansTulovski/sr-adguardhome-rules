@@ -1,30 +1,43 @@
 import re
+import urllib.request
+import os
 
-def convert():
-    # 读取同目录下的源 AdGuard 规则文件
+def convert_rule(source_url, output_filename):
+    print(f"正在从远程拉取规则: {source_url}")
     try:
-        with open("adblock.txt", "r", encoding="utf-8") as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        print("未找到源 adblock.txt 文件")
+        req = urllib.request.urlopen(source_url)
+        content = req.read().decode('utf-8')
+        lines = content.splitlines()
+    except Exception as e:
+        print(f"拉取远程规则 {source_url} 失败: {e}")
         return
 
     sr_rules = [
-        "# ======= Jeans App AdBlock Rule-Set (Auto Generated) ======= #\n",
-        "# 自动从 AdGuard 规则转换，供 Shadowrocket 使用\n\n"
+        f"# ======= Reusable AdBlock Rule-Set (Auto Generated) ======= #\n",
+        f"# Source: {source_url}\n\n"
     ]
 
     for line in lines:
         line = line.strip()
-        # 用正则匹配像 ||domain.com^ 格式的行
+        # 兼容 AdGuard 格式 (||domain.com^) 和纯域名格式
         m = re.match(r"^\|\|([^^]+)\^$", line)
         if m:
             sr_rules.append(f"DOMAIN-SUFFIX,{m.group(1)}\n")
+        elif line and not line.startswith("!") and not line.startswith("#"):
+            sr_rules.append(f"DOMAIN-SUFFIX,{line}\n")
 
-    # 输出为小火箭专用的 .list 文件
-    with open("jeans-adblock.list", "w", encoding="utf-8") as f:
+    with open(output_filename, "w", encoding="utf-8") as f:
         f.writelines(sr_rules)
-    print(f"转换成功！共生成 {len(sr_rules) - 2} 条小火箭规则。")
+    print(f"转换成功！已保存至 {output_filename}，共生成 {len(sr_rules) - 2} 条规则。")
 
 if __name__ == "__main__":
-    convert()
+    if os.path.exists("sources.txt"):
+        with open("sources.txt", "r", encoding="utf-8") as f:
+            urls = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+        
+        for i, url in enumerate(urls):
+            # 第一行链接默认输出为 jeans-adblock.list，后续如果有更多行会依次命名为 rule_2.list 等
+            output_name = f"rule_{i+1}.list" if i > 0 else "jeans-adblock.list"
+            convert_rule(url, output_name)
+    else:
+        print("未找到 sources.txt 配置文件！")
