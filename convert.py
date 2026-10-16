@@ -1,7 +1,19 @@
 import re
 import urllib.request
 import os
+import glob
 from urllib.parse import urlparse
+from datetime import datetime, timezone, timedelta
+
+def clean_old_lists():
+    # 查找仓库里所有以 jeans- 开头的 .list 文件并删除
+    old_files = glob.glob("jeans-*.list")
+    for f in old_files:
+        try:
+            os.remove(f)
+            print(f"已清理旧文件: {f}")
+        except Exception as e:
+            print(f"清理文件 {f} 失败: {e}")
 
 def convert_rule(source_url):
     print(f"正在从远程拉取规则: {source_url}")
@@ -24,14 +36,18 @@ def convert_rule(source_url):
     else:
         output_filename = "jeans-rules.list"
 
+    # 3. 计算北京时间 (UTC+8) 时间戳
+    bj_time = datetime.now(timezone.utc) + timedelta(hours=8)
+    time_str = bj_time.strftime("%Y-%m-%d %H:%M:%S")
+
     sr_rules = [
-        f"# ======= Reusable AdBlock Rule-Set (Auto Generated) ======= #\n",
-        f"# Source: {source_url}\n\n"
+        f"# ======= Jeans App AdBlock Rule-Set (Auto Generated) ======= #\n",
+        f"# Source: {source_url}\n",
+        f"# Updated: {time_str} (UTC+8)\n\n"
     ]
 
     for line in lines:
         line = line.strip()
-        # 兼容 AdGuard 格式 (||domain.com^) 和纯域名格式
         m = re.match(r"^\|\|([^^]+)\^$", line)
         if m:
             sr_rules.append(f"DOMAIN-SUFFIX,{m.group(1)}\n")
@@ -40,9 +56,12 @@ def convert_rule(source_url):
 
     with open(output_filename, "w", encoding="utf-8") as f:
         f.writelines(sr_rules)
-    print(f"转换成功！已保存至 {output_filename}，共生成 {len(sr_rules) - 2} 条规则。")
+    print(f"转换成功！已保存至 {output_filename}，共生成 {len(sr_rules) - 3} 条规则。")
 
 if __name__ == "__main__":
+    # 运行前清理旧的 jeans-*.list 文件
+    clean_old_lists()
+
     if os.path.exists("sources.txt"):
         with open("sources.txt", "r", encoding="utf-8") as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith("#")]
