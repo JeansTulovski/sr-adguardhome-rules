@@ -3,13 +3,17 @@ name: Auto Convert Reusable Rules
 on:
   push:
     branches:
-      - main     # 当你修改 sources.txt 或脚本时自动运行
+      - main
     paths:
       - 'sources.txt'
       - 'convert.py'
   schedule:
-    - cron: '0 20 * * *'  # 每天定时自动运行（北京时间早上 4 点）
-  workflow_dispatch:      # 允许你在 GitHub 网页上随时手动点按钮触发
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+# 👇【关键修改：加上这几行权限声明，允许 Actions 往仓库里写文件并推送】
+permissions:
+  contents: write
 
 jobs:
   build:
