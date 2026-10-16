@@ -1,0 +1,35 @@
+name: Auto Convert Reusable Rules
+
+on:
+  push:
+    branches:
+      - main     # 当你修改 sources.txt 或脚本时自动运行
+    paths:
+      - 'sources.txt'
+      - 'convert.py'
+  schedule:
+    - cron: '0 20 * * *'  # 每天定时自动运行（北京时间早上 4 点）
+  workflow_dispatch:      # 允许你在 GitHub 网页上随时手动点按钮触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v3
+
+      - name: 设置 Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: 运行批量转换脚本
+        run: python convert.py
+
+      - name: 自动提交生成的规则文件
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add *.list
+          git commit -m "chore: auto update reusable rule-sets" || exit 0
+          git push
