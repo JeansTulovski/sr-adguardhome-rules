@@ -1,8 +1,9 @@
 import re
 import urllib.request
 import os
+from urllib.parse import urlparse
 
-def convert_rule(source_url, output_filename):
+def convert_rule(source_url):
     print(f"正在从远程拉取规则: {source_url}")
     try:
         req = urllib.request.urlopen(source_url)
@@ -11,6 +12,17 @@ def convert_rule(source_url, output_filename):
     except Exception as e:
         print(f"拉取远程规则 {source_url} 失败: {e}")
         return
+
+    # 1. 自动从 URL 中提取原始文件名（例如 adguard-dns.txt）
+    parsed_url = urlparse(source_url)
+    basename = os.path.basename(parsed_url.path)
+    
+    # 2. 去掉原后缀（如 .txt），并加上 jeans- 前缀和 .list 后缀
+    if basename:
+        name_without_ext = os.path.splitext(basename)[0]
+        output_filename = f"jeans-{name_without_ext}.list"
+    else:
+        output_filename = "jeans-rules.list"
 
     sr_rules = [
         f"# ======= Reusable AdBlock Rule-Set (Auto Generated) ======= #\n",
@@ -35,9 +47,7 @@ if __name__ == "__main__":
         with open("sources.txt", "r", encoding="utf-8") as f:
             urls = [line.strip() for line in f if line.strip() and not line.startswith("#")]
         
-        for i, url in enumerate(urls):
-            # 第一行链接默认输出为 jeans-adblock.list，后续如果有更多行会依次命名为 rule_2.list 等
-            output_name = f"rule_{i+1}.list" if i > 0 else "jeans-adblock.list"
-            convert_rule(url, output_name)
+        for url in urls:
+            convert_rule(url)
     else:
         print("未找到 sources.txt 配置文件！")
