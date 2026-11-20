@@ -1,6 +1,6 @@
 # ======= Jeans App AdBlock Rule-Set (Auto Generated) ======= #
 # Source: https://fastly.jsdelivr.net/gh/abclq/home-dns-adblock@main/dist/adguard-dns.txt
-# Updated: 2026-11-19 09:36:18 (UTC+8)
+# Updated: 2026-11-20 09:35:46 (UTC+8)
 
 DOMAIN-SUFFIX,activity-ag.awemeughun.com
 DOMAIN-SUFFIX,ad.toutiao.com
